@@ -322,4 +322,20 @@ Java_com_gpubench_MainActivity_nativeGetTriangleCount(JNIEnv* env, jobject thiz)
     return g_triangleCount.load();
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_gpubench_MainActivity_nativeGetDeviceInfo(JNIEnv* env, jobject thiz) {
+    // 获取 GPU 信息
+    std::string info;
+
+    if (g_glEngine) {
+        info = "OpenGL ES 3.2";
+    } else if (g_vkEngine) {
+        info = "Vulkan 1.3";
+    } else {
+        info = "未初始化";
+    }
+
+    return env->NewStringUTF(info.c_str());
+}
+
 } // extern "C"

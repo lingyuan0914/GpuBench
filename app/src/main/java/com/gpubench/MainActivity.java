@@ -28,10 +28,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private native float nativeGetCurrentFps();
     private native float nativeGetCurrentFrameTime();
     private native long nativeGetTriangleCount();
+    private native String nativeGetDeviceInfo();
 
     // UI 组件
     private SurfaceView surfaceView;
     private TextView tvTitle;
+    private TextView tvDeviceInfo;
     private TextView tvFps;
     private TextView tvInfo;
     private TextView tvStatus;
@@ -67,6 +69,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             // 初始化 UI
             surfaceView = findViewById(R.id.surfaceView);
             tvTitle = findViewById(R.id.tvTitle);
+            tvDeviceInfo = findViewById(R.id.tvDeviceInfo);
             tvFps = findViewById(R.id.tvFps);
             tvInfo = findViewById(R.id.tvInfo);
             tvStatus = findViewById(R.id.tvStatus);
@@ -103,6 +106,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             // 默认选中 GL
             btnGL.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF2196F3));
             btnVulkan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF666666));
+
+            // 显示设备信息
+            loadDeviceInfo();
 
             // FPS 更新任务
             fpsUpdater = new Runnable() {
@@ -237,6 +243,36 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private void updateStatus(String status) {
         if (tvStatus != null) {
             tvStatus.setText(status);
+        }
+    }
+
+    private void loadDeviceInfo() {
+        try {
+            // 获取 Android 设备信息
+            String manufacturer = android.os.Build.MANUFACTURER;
+            String model = android.os.Build.MODEL;
+            String device = android.os.Build.DEVICE;
+            int sdkVersion = android.os.Build.VERSION.SDK_INT;
+            String androidVersion = android.os.Build.VERSION.RELEASE;
+
+            // 获取 OpenGL ES 信息
+            android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_RENDERER);
+            android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_VERSION);
+            android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_VENDOR);
+
+            // 构建设备信息字符串
+            StringBuilder info = new StringBuilder();
+            info.append(String.format("%s %s | Android %s", manufacturer, model, androidVersion));
+
+            tvDeviceInfo.setText(info.toString());
+            tvDeviceInfo.setTextSize(11);
+
+            Log.d(TAG, "Device: " + manufacturer + " " + model);
+            Log.d(TAG, "Android: " + androidVersion + " (API " + sdkVersion + ")");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading device info", e);
+            tvDeviceInfo.setText("设备信息加载失败");
         }
     }
 

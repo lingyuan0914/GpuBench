@@ -10,12 +10,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- FPS 和状态信息叠加层 -->
+    <!-- 顶部信息叠加层 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="12dp"
         android:background="#80000000">
 
         <!-- 标题 -->
@@ -24,10 +24,22 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="🎮 GPU Benchmark"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textColor="#FFFFFFFF"
             android:textStyle="bold"
             android:gravity="center" />
+
+        <!-- 设备信息 -->
+        <TextView
+            android:id="@+id/tvDeviceInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GPU: 加载中..."
+            android:textSize="11sp"
+            android:textColor="#FFAAAAAA"
+            android:gravity="center"
+            android:fontFamily="monospace"
+            android:paddingTop="4dp" />
 
         <!-- FPS 显示 -->
         <TextView
@@ -35,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="FPS: --"
-            android:textSize="48sp"
+            android:textSize="56sp"
             android:textColor="#FF00FF00"
             android:textStyle="bold"
             android:gravity="center"
@@ -47,7 +59,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="帧时间: -- ms | 三角形: --"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textColor="#FFCCCCCC"
             android:gravity="center"
             android:fontFamily="monospace" />
@@ -71,7 +83,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="12dp"
         android:background="#80000000">
 
         <!-- API 选择 -->
@@ -107,9 +119,9 @@
         <Button
             android:id="@+id/btnStart"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="50dp"
             android:text="▶ 开始测试"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:backgroundTint="#FF4CAF50"
             android:textColor="#FFFFFFFF" />
