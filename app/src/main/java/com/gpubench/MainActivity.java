@@ -178,24 +178,24 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         new Thread(() -> {
             try {
                 if (api.equals("GL") || api.equals("Both")) {
-                    // 确保 GL 引擎已初始化
-                    if (selectedApi.equals("Vulkan")) {
-                        // 需要重新初始化为 GL
-                        nativeShutdown();
-                        boolean glOk = nativeInitGL(surfaceView.getHolder().getSurface());
-                        if (!glOk) {
-                            appendResult("❌ OpenGL ES 初始化失败\n");
+                    handler.post(() -> updateStatus("初始化 OpenGL ES 引擎..."));
+                    // 关闭现有引擎并重新初始化 GL
+                    nativeShutdown();
+                    boolean glOk = nativeInitGL(surfaceView.getHolder().getSurface());
+                    if (!glOk) {
+                        appendResult("❌ OpenGL ES 初始化失败\n");
+                        if (api.equals("GL")) {
                             return;
                         }
+                    } else {
+                        runGLTests();
                     }
-                    runGLTests();
                 }
 
                 if (api.equals("Vulkan") || api.equals("Both")) {
-                    // 需要重新初始化 Vulkan
-                    nativeShutdown();
                     handler.post(() -> updateStatus("初始化 Vulkan 引擎..."));
-
+                    // 关闭现有引擎并重新初始化 Vulkan
+                    nativeShutdown();
                     boolean vkOk = nativeInitVulkan(surfaceView.getHolder().getSurface());
                     if (vkOk) {
                         runVulkanTests();
