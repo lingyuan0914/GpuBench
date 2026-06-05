@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF1A1A2E">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- 标题 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚙️ 测试设置"
+            android:textSize="28sp"
+            android:textColor="#FFFFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="32dp" />
+
+        <!-- 图形 API 选择 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="图形 API"
+            android:textSize="18sp"
+            android:textColor="#FFAAAAAA"
+            android:paddingBottom="12dp" />
+
+        <RadioGroup
+            android:id="@+id/radioGroupApi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FF0D0D1A"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/radioGL"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔵 OpenGL ES 3.2"
+                android:textSize="16sp"
+                android:textColor="#FFFFFFFF"
+                android:padding="12dp"
+                android:buttonTint="#FF4CAF50" />
+
+            <RadioButton
+                android:id="@+id/radioVulkan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🟠 Vulkan 1.3"
+                android:textSize="16sp"
+                android:textColor="#FFFFFFFF"
+                android:padding="12dp"
+                android:buttonTint="#FFFF9800" />
+
+            <RadioButton
+                android:id="@+id/radioBoth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚡ 全部测试 (对比)"
+                android:textSize="16sp"
+                android:textColor="#FFFFFFFF"
+                android:padding="12dp"
+                android:buttonTint="#FF2196F3" />
+
+        </RadioGroup>
+
+        <!-- 测试帧数 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="测试帧数"
+            android:textSize="18sp"
+            android:textColor="#FFAAAAAA"
+            android:paddingBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="#FF0D0D1A"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100"
+                android:textSize="14sp"
+                android:textColor="#FF888888" />
+
+            <SeekBar
+                android:id="@+id/seekBarFrames"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="9"
+                android:progress="2"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:progressTint="#FF4CAF50"
+                android:thumbTint="#FF4CAF50" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1000"
+                android:textSize="14sp"
+                android:textColor="#FF888888" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvFrameCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="300 帧"
+            android:textSize="16sp"
+            android:textColor="#FF4CAF50"
+            android:gravity="center"
+            android:paddingBottom="24dp" />
+
+        <!-- 垂直同步 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="其他选项"
+            android:textSize="18sp"
+            android:textColor="#FFAAAAAA"
+            android:paddingBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="#FF0D0D1A"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="32dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="垂直同步 (VSync)"
+                android:textSize="16sp"
+                android:textColor="#FFFFFFFF" />
+
+            <Switch
+                android:id="@+id/switchVsync"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:thumbTint="#FF4CAF50"
+                android:trackTint="#FF333333" />
+
+        </LinearLayout>
+
+        <!-- 说明文本 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="💡 提示：\n• 帧数越多，测试越准确，但耗时更长\n• 关闭 VSync 可测试最大性能\n• 全部测试会依次运行 GL 和 Vulkan"
+            android:textSize="14sp"
+            android:textColor="#FF888888"
+            android:lineSpacingMultiplier="1.4"
+            android:paddingBottom="32dp" />
+
+        <!-- 开始按钮 -->
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="🚀 开始测试"
+            android:textSize="18sp"
+            android:textColor="#FFFFFFFF"
+            android:backgroundTint="#FF4CAF50" />
+
+    </LinearLayout>
+
+</ScrollView>
