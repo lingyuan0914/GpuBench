@@ -62,3 +62,32 @@ jobs:
         with:
           name: GpuBench-release
           path: app/build/outputs/apk/release/*.apk
+
+      - name: 获取版本号
+        id: version
+        run: echo "version=v$(date +'%Y%m%d')-$(echo $GITHUB_SHA | head -c 7)" >> $GITHUB_OUTPUT
+
+      - name: 发布到 GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "GpuBench ${{ steps.version.outputs.version }}"
+          body: |
+            ## 🎮 GpuBench ${{ steps.version.outputs.version }}
+
+            自动构建于 $(date +'%Y-%m-%d %H:%M:%S') UTC
+
+            ### 📦 下载 APK
+            - **Debug 版本**: `app-debug.apk` - 用于开发调试
+            - **Release 版本**: `app-release-unsigned.apk` - 用于正式测试
+
+            ### 🔧 构建信息
+            - 提交: `${{ github.sha }}`
+            - 分支: `${{ github.ref_name }}`
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
