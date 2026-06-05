@@ -34,6 +34,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private native long nativeGetTriangleCount();
     private native String nativeGetDeviceInfo();
     private native float[] nativeRunComputeTest();
+    private native float[] nativeRunSceneTest(int sceneLevel);
+    private native float nativeRunFullBenchmark();
 
     // UI 组件
     private SurfaceView surfaceView;
@@ -46,6 +48,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private Button btnGL;
     private Button btnVulkan;
     private Button btnStart;
+    private Button btnBenchmark;
     private Button btnCompute;
     private Button btnHistory;
 
@@ -96,6 +99,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             btnGL = findViewById(R.id.btnGL);
             btnVulkan = findViewById(R.id.btnVulkan);
             btnStart = findViewById(R.id.btnStart);
+            btnBenchmark = findViewById(R.id.btnBenchmark);
             btnCompute = findViewById(R.id.btnCompute);
             btnHistory = findViewById(R.id.btnHistory);
 
@@ -122,6 +126,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     stopTest();
                 } else {
                     startTest();
+                }
+            });
+
+            // 完整跑分按钮
+            btnBenchmark.setOnClickListener(v -> {
+                if (!isRunning) {
+                    runFullBenchmark();
                 }
             });
 
@@ -455,6 +466,124 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 Log.e(TAG, "Error saving compute test record", e);
             }
         }).start();
+    }
+
+    private void runFullBenchmark() {
+        if (!surfaceReady) {
+            updateStatus("等待 Surface 就绪...");
+            return;
+        }
+
+        // 禁用所有按钮
+        setAllButtonsEnabled(false);
+
+        new Thread(() -> {
+            try {
+                // 初始化 GL 引擎
+                handler.post(() -> updateStatus("正在初始化引擎..."));
+
+                boolean initOk = nativeInitGL(surfaceView.getHolder().getSurface());
+                if (!initOk) {
+                    handler.post(() -> {
+                        updateStatus("引擎初始化失败");
+                        setAllButtonsEnabled(true);
+                    });
+                    return;
+                }
+
+                // 运行多场景测试
+                StringBuilder resultBuilder = new StringBuilder();
+                float totalScore = 0;
+                int sceneCount = 3;
+
+                for (int i = 1; i <= sceneCount; i++) {
+                    final int scene = i;
+                    final int progress = i;
+                    handler.post(() -> updateStatus(String.format("运行场景 %d/3 (%d万面)...",
+                            progress, progress == 1 ? 100 : progress == 2 ? 300 : 500)));
+
+                    float[] result = nativeRunSceneTest(i);
+                    if (result != null && result.length >= 4) {
+                        float avgFps = result[0];
+                        float avgFrameTime = result[1];
+                        float triangleCount = result[2];
+                        float score = result[3];
+                        totalScore += score;
+
+                        resultBuilder.append(String.format("Scene%d: %.0f FPS | %.1f ms | %.0f万面\n",
+                                i, avgFps, avgFrameTime, triangleCount));
+
+                        // 更新显示
+                        final String sceneResult = resultBuilder.toString();
+                        handler.post(() -> tvComputeResult.setText(sceneResult));
+                    }
+
+                    // 场景间休息
+                    if (i < sceneCount) {
+                        Thread.sleep(500);
+                    }
+                }
+
+                // 计算平均分
+                float avgScore = totalScore / sceneCount;
+
+                // 显示最终结果
+                final String finalResult = resultBuilder.toString();
+                final float finalScore = avgScore;
+                handler.post(() -> {
+                    tvComputeResult.setText(finalResult);
+                    tvFps.setText(String.format("分数: %.0f", finalScore));
+                    tvFps.setTextColor(0xFFFFD700); // 金色
+                    updateStatus("跑分完成！总分: " + String.format("%.0f", finalScore));
+                });
+
+                // 保存记录
+                saveBenchmarkRecord(avgScore, resultBuilder.toString());
+
+                // 关闭引擎
+                nativeShutdown();
+
+                Log.d(TAG, "Benchmark completed: " + finalScore);
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error running benchmark", e);
+                handler.post(() -> updateStatus("跑分错误: " + e.getMessage()));
+            } finally {
+                handler.post(() -> setAllButtonsEnabled(true));
+            }
+        }).start();
+    }
+
+    private void saveBenchmarkRecord(float totalScore, String details) {
+        new Thread(() -> {
+            try {
+                TestRecord record = new TestRecord();
+                record.timestamp = System.currentTimeMillis();
+                record.deviceModel = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
+                record.androidVersion = android.os.Build.VERSION.RELEASE;
+                record.apiType = "Benchmark";
+                record.avgFps = totalScore;
+                record.avgFrameTime = 0;
+                record.triangleCount = (long) totalScore;
+                record.testDuration = 3; // 3个场景
+                record.gpuRenderer = String.format("%.0f 分", totalScore);
+
+                db.testRecordDao().insert(record);
+
+                Log.d(TAG, "Benchmark record saved: " + totalScore);
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving benchmark record", e);
+            }
+        }).start();
+    }
+
+    private void setAllButtonsEnabled(boolean enabled) {
+        btnGL.setEnabled(enabled);
+        btnVulkan.setEnabled(enabled);
+        btnStart.setEnabled(enabled);
+        btnBenchmark.setEnabled(enabled);
+        btnCompute.setEnabled(enabled);
+        btnHistory.setEnabled(enabled);
     }
 
     @Override

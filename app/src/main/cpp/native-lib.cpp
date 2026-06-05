@@ -12,6 +12,7 @@
 #include "Benchmark.h"
 #include "MathUtils.h"
 #include "ComputeTest.h"
+#include "SceneTest.h"
 
 #define LOG_TAG "GpuBench"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -350,6 +351,54 @@ Java_com_gpubench_MainActivity_nativeRunComputeTest(JNIEnv* env, jobject thiz) {
     env->SetFloatArrayRegion(resultArray, 0, 3, values);
 
     return resultArray;
+}
+
+JNIEXPORT jfloatArray JNICALL
+Java_com_gpubench_MainActivity_nativeRunSceneTest(JNIEnv* env, jobject thiz, jint sceneLevel) {
+    if (!g_glEngine) {
+        LOGE("GL engine not initialized");
+        return nullptr;
+    }
+
+    // 运行单个场景测试
+    GpuBench::SceneResult result = GpuBench::SceneTest::runScene(
+        g_glEngine->getDisplay(),
+        g_glEngine->getSurface(),
+        g_glEngine->getWidth(),
+        g_glEngine->getHeight(),
+        sceneLevel
+    );
+
+    // 返回结果数组 [avgFps, avgFrameTime, triangleCount, score]
+    jfloatArray resultArray = env->NewFloatArray(4);
+    jfloat values[4] = {
+        result.avgFps,
+        result.avgFrameTime,
+        (float)result.triangleCount,
+        result.score
+    };
+    env->SetFloatArrayRegion(resultArray, 0, 4, values);
+
+    return resultArray;
+}
+
+JNIEXPORT jfloat JNICALL
+Java_com_gpubench_MainActivity_nativeRunFullBenchmark(JNIEnv* env, jobject thiz) {
+    if (!g_glEngine) {
+        LOGE("GL engine not initialized");
+        return 0;
+    }
+
+    // 运行完整基准测试
+    std::vector<GpuBench::SceneResult> results = GpuBench::SceneTest::runBenchmark(
+        g_glEngine->getDisplay(),
+        g_glEngine->getSurface(),
+        g_glEngine->getWidth(),
+        g_glEngine->getHeight()
+    );
+
+    // 计算总分
+    return GpuBench::SceneTest::calculateTotalScore(results);
 }
 
 } // extern "C"

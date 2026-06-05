@@ -138,7 +138,7 @@
             android:backgroundTint="#FF4CAF50"
             android:textColor="#FFFFFFFF" />
 
-        <!-- 计算测试和历史记录按钮 -->
+        <!-- 功能按钮组 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -146,26 +146,38 @@
             android:layout_marginTop="8dp">
 
             <Button
+                android:id="@+id/btnBenchmark"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="🏆 完整跑分"
+                android:textSize="13sp"
+                android:backgroundTint="#FFFF5722"
+                android:textColor="#FFFFFFFF"
+                android:layout_marginEnd="2dp" />
+
+            <Button
                 android:id="@+id/btnCompute"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:text="🧮 计算测试"
-                android:textSize="14sp"
+                android:text="🧮 计算"
+                android:textSize="13sp"
                 android:backgroundTint="#FF9C27B0"
                 android:textColor="#FFFFFFFF"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp" />
 
             <Button
                 android:id="@+id/btnHistory"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:text="📊 历史记录"
-                android:textSize="14sp"
+                android:text="📊 历史"
+                android:textSize="13sp"
                 android:backgroundTint="#FF333333"
                 android:textColor="#FFFFFFFF"
-                android:layout_marginStart="4dp" />
+                android:layout_marginStart="2dp" />
 
         </LinearLayout>
 
