@@ -10,6 +10,7 @@
 #include "gl/GLEngine.h"
 #include "vulkan/VulkanEngine.h"
 #include "Benchmark.h"
+#include "MathUtils.h"
 
 #define LOG_TAG "GpuBench"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -157,7 +158,7 @@ void runTriangleBenchmarkGL() {
     // 生成球体几何数据
     std::vector<float> vertices;
     std::vector<uint32_t> indices;
-    g_glEngine->generateSphere(32, 32, vertices, indices);
+    GpuBench::generateSphere(32, 32, vertices, indices);
 
     // 创建 VAO/VBO/EBO
     GLuint VAO, VBO, EBO, instanceVBO;

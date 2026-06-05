@@ -33,9 +33,6 @@ public:
     int getWidth() const { return width_; }
     int getHeight() const { return height_; }
 
-    // 几何生成
-    void generateSphere(int slices, int stacks, std::vector<float>& vertices, std::vector<uint32_t>& indices);
-
 private:
     // EGL 上下文
     EGLDisplay display_ = EGL_NO_DISPLAY;
