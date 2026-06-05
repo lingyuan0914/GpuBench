@@ -194,7 +194,7 @@ public:
 
         // 矩阵
         Mat4 projection = Mat4::perspective(1.0472f, (float)width / height, 0.1f, 200.0f);
-        Mat4 view = Mat4::lookAt({0, 0, 40 + sceneLevel * 10}, {0, 0, 0}, {0, 1, 0});
+        Mat4 view = Mat4::lookAt({0, 0, (float)(40 + sceneLevel * 10)}, {0, 0, 0}, {0, 1, 0});
 
         // 渲染测试
         FrameTimer timer;
