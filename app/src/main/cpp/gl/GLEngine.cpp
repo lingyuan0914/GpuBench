@@ -1063,4 +1063,10 @@ TestResult GLEngine::runTextureTest(int frameCount) {
     return result;
 }
 
+// 公共几何生成方法
+void GLEngine::generateSphere(int slices, int stacks, std::vector<float>& vertices, std::vector<uint32_t>& indices) {
+    // 调用 MathUtils.h 中的实现
+    ::generateSphere(slices, stacks, vertices, indices);
+}
+
 } // namespace GpuBench

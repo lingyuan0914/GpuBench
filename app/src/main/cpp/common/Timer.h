@@ -79,6 +79,18 @@ public:
 
     size_t getFrameCount() const { return frameTimes_.size(); }
 
+    // 获取当前帧的 FPS 和帧时间 (用于实时显示)
+    float getCurrentFps() const {
+        if (frameTimes_.empty()) return 0.0f;
+        float ms = frameTimes_.back();
+        return ms > 0.0f ? 1000.0f / ms : 0.0f;
+    }
+
+    float getCurrentMs() const {
+        if (frameTimes_.empty()) return 0.0f;
+        return frameTimes_.back();
+    }
+
 private:
     std::chrono::high_resolution_clock::time_point frameStart_, frameEnd_;
     std::vector<float> frameTimes_;

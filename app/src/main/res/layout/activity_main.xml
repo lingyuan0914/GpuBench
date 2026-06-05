@@ -1,137 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#FF1A1A2E">
+    android:background="#FF000000">
 
-    <!-- 标题栏 -->
+    <!-- 渲染表面 - 全屏 -->
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- FPS 和状态信息叠加层 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="16dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#80000000">
 
+        <!-- 标题 -->
         <TextView
-            android:layout_width="0dp"
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="🎮 GPU 性能测试"
-            android:textSize="24sp"
+            android:text="🎮 GPU Benchmark"
+            android:textSize="20sp"
             android:textColor="#FFFFFFFF"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:gravity="center" />
 
-        <Button
-            android:id="@+id/btnSettings"
-            android:layout_width="wrap_content"
+        <!-- FPS 显示 -->
+        <TextView
+            android:id="@+id/tvFps"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⚙️ 设置"
+            android:text="FPS: --"
+            android:textSize="48sp"
+            android:textColor="#FF00FF00"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:fontFamily="monospace" />
+
+        <!-- 详细信息 -->
+        <TextView
+            android:id="@+id/tvInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="帧时间: -- ms | 三角形: --"
             android:textSize="14sp"
-            android:backgroundTint="#FF333333"
+            android:textColor="#FFCCCCCC"
+            android:gravity="center"
+            android:fontFamily="monospace" />
+
+        <!-- 状态 -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="等待开始..."
+            android:textSize="12sp"
+            android:textColor="#FF888888"
+            android:gravity="center"
+            android:paddingTop="4dp" />
+
+    </LinearLayout>
+
+    <!-- 底部控制区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#80000000">
+
+        <!-- API 选择 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingBottom="8dp">
+
+            <Button
+                android:id="@+id/btnGL"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="OpenGL ES"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#FF2196F3"
+                android:textColor="#FFFFFFFF" />
+
+            <Button
+                android:id="@+id/btnVulkan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vulkan"
+                android:textSize="14sp"
+                android:backgroundTint="#FFFF9800"
+                android:textColor="#FFFFFFFF" />
+
+        </LinearLayout>
+
+        <!-- 开始/停止按钮 -->
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="▶ 开始测试"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="#FF4CAF50"
             android:textColor="#FFFFFFFF" />
 
     </LinearLayout>
 
-    <!-- 当前设置信息 -->
-    <TextView
-        android:id="@+id/tvSettings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="API: OpenGL ES 3.2 | 帧数: 300 | VSync: 关"
-        android:textSize="12sp"
-        android:textColor="#FF888888"
-        android:gravity="center"
-        android:paddingBottom="8dp" />
-
-    <!-- 渲染表面 -->
-    <SurfaceView
-        android:id="@+id/surfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_margin="16dp"
-        android:background="#FF0D0D1A" />
-
-    <!-- 状态文本 -->
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="状态: 初始化中..."
-        android:textSize="14sp"
-        android:textColor="#FF888888"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="8dp" />
-
-    <!-- 进度条 -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:visibility="gone"
-        android:indeterminate="true" />
-
-    <!-- 按钮区域 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="16dp">
-
-        <Button
-            android:id="@+id/btnRunGL"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="🔵 OpenGL ES"
-            android:textSize="14sp"
-            android:layout_marginEnd="4dp" />
-
-        <Button
-            android:id="@+id/btnRunVulkan"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="🟠 Vulkan"
-            android:textSize="14sp"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp" />
-
-        <Button
-            android:id="@+id/btnRunBoth"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="⚡ 全部测试"
-            android:textSize="14sp"
-            android:layout_marginStart="4dp" />
-
-    </LinearLayout>
-
-    <!-- 结果显示 -->
-    <ScrollView
-        android:id="@+id/scrollView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_margin="16dp"
-        android:background="#FF0D0D1A"
-        android:padding="12dp">
-
-        <TextView
-            android:id="@+id/tvResults"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textColor="#FFCCCCCC"
-            android:fontFamily="monospace"
-            android:lineSpacingMultiplier="1.2" />
-
-    </ScrollView>
-
-</LinearLayout>
+</FrameLayout>

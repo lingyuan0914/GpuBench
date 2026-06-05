@@ -53,3 +53,6 @@ Thumbs.db
 
 # Tools directory (downloaded SDK/NDK)
 tools/
+
+# Build artifacts
+artifacts/

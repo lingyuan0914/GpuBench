@@ -1,7 +1,6 @@
 package com.gpubench;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,12 +9,9 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.ScrollView;
 import android.widget.TextView;
-
-import org.json.JSONObject;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "GpuBench";
@@ -27,132 +23,105 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     // JNI 方法
     private native boolean nativeInitGL(Surface surface);
     private native boolean nativeInitVulkan(Surface surface);
-    private native String nativeRunGLTest(String testName, int frameCount);
-    private native String nativeRunVulkanTest(String testName, int frameCount);
-    private native String[] nativeGetGLTestNames();
-    private native String[] nativeGetVulkanTestNames();
+    private native boolean nativeRunBenchmark(String api, int durationFrames);
+    private native void nativeStopBenchmark();
     private native void nativeShutdown();
-    private native String nativeGetDeviceInfo();
+    private native boolean nativeIsRunning();
+    private native float nativeGetCurrentFps();
+    private native float nativeGetCurrentFrameTime();
+    private native long nativeGetTriangleCount();
 
     // UI 组件
     private SurfaceView surfaceView;
+    private TextView tvTitle;
+    private TextView tvFps;
+    private TextView tvInfo;
     private TextView tvStatus;
-    private TextView tvResults;
-    private TextView tvSettings;
-    private Button btnRunGL;
-    private Button btnRunVulkan;
-    private Button btnRunBoth;
-    private Button btnSettings;
-    private ProgressBar progressBar;
-    private ScrollView scrollView;
+    private Button btnGL;
+    private Button btnVulkan;
+    private Button btnStart;
 
     private Handler handler;
     private boolean isRunning = false;
+    private boolean surfaceReady = false;
+    private String selectedApi = "GL"; // GL 或 Vulkan
 
-    // 设置参数
-    private String selectedApi = "GL";
-    private int frameCount = 300;
-    private boolean vsync = false;
+    // FPS 更新定时器
+    private Runnable fpsUpdater;
+    private static final int FPS_UPDATE_INTERVAL = 100; // 每100ms更新一次
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 全屏显示
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
+
         setContentView(R.layout.activity_main);
 
         handler = new Handler(Looper.getMainLooper());
 
-        // 从 Intent 获取设置参数
-        Intent intent = getIntent();
-        if (intent.hasExtra(SettingsActivity.KEY_API)) {
-            selectedApi = intent.getStringExtra(SettingsActivity.KEY_API);
-            frameCount = intent.getIntExtra(SettingsActivity.KEY_FRAME_COUNT, 300);
-            vsync = intent.getBooleanExtra(SettingsActivity.KEY_VSYNC, false);
-        }
-
         // 初始化 UI
         surfaceView = findViewById(R.id.surfaceView);
+        tvTitle = findViewById(R.id.tvTitle);
+        tvFps = findViewById(R.id.tvFps);
+        tvInfo = findViewById(R.id.tvInfo);
         tvStatus = findViewById(R.id.tvStatus);
-        tvResults = findViewById(R.id.tvResults);
-        tvSettings = findViewById(R.id.tvSettings);
-        btnRunGL = findViewById(R.id.btnRunGL);
-        btnRunVulkan = findViewById(R.id.btnRunVulkan);
-        btnRunBoth = findViewById(R.id.btnRunBoth);
-        btnSettings = findViewById(R.id.btnSettings);
-        progressBar = findViewById(R.id.progressBar);
-        scrollView = findViewById(R.id.scrollView);
+        btnGL = findViewById(R.id.btnGL);
+        btnVulkan = findViewById(R.id.btnVulkan);
+        btnStart = findViewById(R.id.btnStart);
 
         surfaceView.getHolder().addCallback(this);
 
-        // 按钮事件
-        btnRunGL.setOnClickListener(v -> runTests("GL"));
-        btnRunVulkan.setOnClickListener(v -> runTests("Vulkan"));
-        btnRunBoth.setOnClickListener(v -> runTests("Both"));
-        btnSettings.setOnClickListener(v -> {
-            Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivity(settingsIntent);
-            finish();
+        // API 选择按钮
+        btnGL.setOnClickListener(v -> {
+            selectedApi = "GL";
+            btnGL.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF2196F3));
+            btnVulkan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF666666));
+            updateStatus("已选择 OpenGL ES");
         });
 
-        // 显示当前设置
-        updateSettingsInfo();
+        btnVulkan.setOnClickListener(v -> {
+            selectedApi = "Vulkan";
+            btnVulkan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFF9800));
+            btnGL.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF666666));
+            updateStatus("已选择 Vulkan");
+        });
 
-        // 初始状态
-        updateStatus("等待 Surface 创建...");
-        setButtonsEnabled(false);
-    }
+        // 开始/停止按钮
+        btnStart.setOnClickListener(v -> {
+            if (isRunning) {
+                stopTest();
+            } else {
+                startTest();
+            }
+        });
 
-    private void updateSettingsInfo() {
-        String apiName;
-        switch (selectedApi) {
-            case "GL":
-                apiName = "OpenGL ES 3.2";
-                break;
-            case "Vulkan":
-                apiName = "Vulkan 1.3";
-                break;
-            default:
-                apiName = "全部测试";
-                break;
-        }
-        tvSettings.setText(String.format("API: %s | 帧数: %d | VSync: %s",
-                apiName, frameCount, vsync ? "开" : "关"));
+        // 默认选中 GL
+        btnGL.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF2196F3));
+        btnVulkan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF666666));
+
+        // FPS 更新任务
+        fpsUpdater = new Runnable() {
+            @Override
+            public void run() {
+                if (isRunning) {
+                    updateFpsDisplay();
+                    handler.postDelayed(this, FPS_UPDATE_INTERVAL);
+                }
+            }
+        };
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        updateStatus("Surface 已创建，初始化引擎...");
-        new Thread(() -> {
-            // 根据选择的 API 初始化引擎
-            boolean initOk = false;
-            String apiName = "OpenGL ES";
-
-            if (selectedApi.equals("Vulkan")) {
-                initOk = nativeInitVulkan(holder.getSurface());
-                if (initOk) {
-                    apiName = "Vulkan";
-                } else {
-                    // Vulkan 失败，尝试 GL
-                    initOk = nativeInitGL(holder.getSurface());
-                    if (initOk) {
-                        selectedApi = "GL";
-                        apiName = "OpenGL ES";
-                    }
-                }
-            } else {
-                initOk = nativeInitGL(holder.getSurface());
-            }
-
-            final boolean success = initOk;
-            final String finalApiName = apiName;
-            handler.post(() -> {
-                if (success) {
-                    updateStatus(finalApiName + " 引擎初始化成功");
-                    setButtonsEnabled(true);
-                } else {
-                    updateStatus("引擎初始化失败");
-                }
-            });
-        }).start();
+        Log.d(TAG, "Surface created");
+        surfaceReady = true;
+        updateStatus("就绪 - 选择 API 并开始测试");
     }
 
     @Override
@@ -162,149 +131,113 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        Log.d(TAG, "Surface destroyed");
+        surfaceReady = false;
+        if (isRunning) {
+            stopTest();
+        }
         nativeShutdown();
-        setButtonsEnabled(false);
-        updateStatus("Surface 已销毁");
     }
 
-    private void runTests(String api) {
-        if (isRunning) return;
+    private void startTest() {
+        if (!surfaceReady) {
+            updateStatus("等待 Surface 就绪...");
+            return;
+        }
 
         isRunning = true;
-        setButtonsEnabled(false);
-        progressBar.setVisibility(View.VISIBLE);
-        tvResults.setText("");
+        btnStart.setText("⏹ 停止测试");
+        btnStart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF44336));
+        btnGL.setEnabled(false);
+        btnVulkan.setEnabled(false);
+
+        tvTitle.setText("🎮 GPU Benchmark - " + (selectedApi.equals("GL") ? "OpenGL ES" : "Vulkan"));
 
         new Thread(() -> {
-            try {
-                if (api.equals("GL") || api.equals("Both")) {
-                    handler.post(() -> updateStatus("初始化 OpenGL ES 引擎..."));
-                    // 关闭现有引擎并重新初始化 GL
-                    nativeShutdown();
-                    boolean glOk = nativeInitGL(surfaceView.getHolder().getSurface());
-                    if (!glOk) {
-                        appendResult("❌ OpenGL ES 初始化失败\n");
-                        if (api.equals("GL")) {
-                            return;
-                        }
-                    } else {
-                        runGLTests();
-                    }
+            // 初始化引擎
+            boolean initOk;
+            if (selectedApi.equals("Vulkan")) {
+                initOk = nativeInitVulkan(surfaceView.getHolder().getSurface());
+                if (!initOk) {
+                    handler.post(() -> {
+                        updateStatus("Vulkan 初始化失败，尝试 OpenGL ES...");
+                        // 回退到 GL
+                        new Thread(() -> {
+                            boolean glOk = nativeInitGL(surfaceView.getHolder().getSurface());
+                            if (glOk) {
+                                handler.post(() -> updateStatus("使用 OpenGL ES 运行"));
+                                nativeRunBenchmark("GL", 0); // 0 = 持续运行
+                            } else {
+                                handler.post(() -> {
+                                    updateStatus("初始化失败");
+                                    stopTest();
+                                });
+                            }
+                        }).start();
+                    });
+                    return;
                 }
-
-                if (api.equals("Vulkan") || api.equals("Both")) {
-                    handler.post(() -> updateStatus("初始化 Vulkan 引擎..."));
-                    // 关闭现有引擎并重新初始化 Vulkan
-                    nativeShutdown();
-                    boolean vkOk = nativeInitVulkan(surfaceView.getHolder().getSurface());
-                    if (vkOk) {
-                        runVulkanTests();
-                    } else {
-                        appendResult("❌ Vulkan 初始化失败（设备可能不支持）\n");
-                    }
+            } else {
+                initOk = nativeInitGL(surfaceView.getHolder().getSurface());
+                if (!initOk) {
+                    handler.post(() -> {
+                        updateStatus("OpenGL ES 初始化失败");
+                        stopTest();
+                    });
+                    return;
                 }
-
-                handler.post(() -> {
-                    updateStatus("测试完成！");
-                    appendResult("\n========== 测试完成 ==========\n");
-                });
-
-            } catch (Exception e) {
-                Log.e(TAG, "Test error", e);
-                handler.post(() -> updateStatus("测试出错: " + e.getMessage()));
-            } finally {
-                isRunning = false;
-                handler.post(() -> {
-                    setButtonsEnabled(true);
-                    progressBar.setVisibility(View.GONE);
-                });
             }
+
+            handler.post(() -> updateStatus("正在运行测试..."));
+
+            // 开始 FPS 更新
+            handler.post(fpsUpdater);
+
+            // 运行基准测试 (持续运行直到调用 stop)
+            nativeRunBenchmark(selectedApi, 0);
+
         }).start();
     }
 
-    private void runGLTests() {
-        String[] testNames = nativeGetGLTestNames();
-        if (testNames == null) {
-            appendResult("❌ 无法获取 GL 测试列表\n");
-            return;
-        }
+    private void stopTest() {
+        isRunning = false;
+        nativeStopBenchmark();
 
-        handler.post(() -> updateStatus("运行 OpenGL ES 测试..."));
+        handler.removeCallbacks(fpsUpdater);
 
-        for (String testName : testNames) {
-            handler.post(() -> updateStatus("GL: " + testName + "..."));
+        btnStart.setText("▶ 开始测试");
+        btnStart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+        btnGL.setEnabled(true);
+        btnVulkan.setEnabled(true);
 
-            String resultJson = nativeRunGLTest(testName, frameCount);
-            try {
-                JSONObject json = new JSONObject(resultJson);
-                String result = String.format(
-                    "🔵 [GL] %s\n" +
-                    "   FPS: %.1f\n" +
-                    "   帧时间: %.2f ms\n" +
-                    "   三角形: %s\n" +
-                    "   Draw Calls: %s\n\n",
-                    json.getString("name"),
-                    json.getDouble("fps"),
-                    json.getDouble("frameTime"),
-                    formatNumber(json.getLong("triangles")),
-                    formatNumber(json.getLong("drawCalls"))
-                );
-                appendResult(result);
-            } catch (Exception e) {
-                appendResult("❌ GL 测试失败: " + testName + "\n");
-            }
-        }
+        updateStatus("测试已停止");
     }
 
-    private void runVulkanTests() {
-        String[] testNames = nativeGetVulkanTestNames();
-        if (testNames == null) {
-            appendResult("❌ 无法获取 Vulkan 测试列表\n");
-            return;
+    private void updateFpsDisplay() {
+        float fps = nativeGetCurrentFps();
+        float frameTime = nativeGetCurrentFrameTime();
+        long triangles = nativeGetTriangleCount();
+
+        // 更新 FPS 显示
+        String fpsText = String.format("%.0f", fps);
+        tvFps.setText("FPS: " + fpsText);
+
+        // 根据 FPS 设置颜色
+        if (fps >= 55) {
+            tvFps.setTextColor(0xFF00FF00); // 绿色 - 流畅
+        } else if (fps >= 30) {
+            tvFps.setTextColor(0xFFFFFF00); // 黄色 - 一般
+        } else {
+            tvFps.setTextColor(0xFFFF0000); // 红色 - 卡顿
         }
 
-        handler.post(() -> updateStatus("运行 Vulkan 测试..."));
-
-        for (String testName : testNames) {
-            handler.post(() -> updateStatus("Vulkan: " + testName + "..."));
-
-            String resultJson = nativeRunVulkanTest(testName, frameCount);
-            try {
-                JSONObject json = new JSONObject(resultJson);
-                String result = String.format(
-                    "🟠 [Vulkan] %s\n" +
-                    "   FPS: %.1f\n" +
-                    "   帧时间: %.2f ms\n" +
-                    "   三角形: %s\n" +
-                    "   Draw Calls: %s\n\n",
-                    json.getString("name"),
-                    json.getDouble("fps"),
-                    json.getDouble("frameTime"),
-                    formatNumber(json.getLong("triangles")),
-                    formatNumber(json.getLong("drawCalls"))
-                );
-                appendResult(result);
-            } catch (Exception e) {
-                appendResult("❌ Vulkan 测试失败: " + testName + "\n");
-            }
-        }
+        // 更新详细信息
+        String info = String.format("帧时间: %.1f ms | 三角形: %s", frameTime, formatNumber(triangles));
+        tvInfo.setText(info);
     }
 
     private void updateStatus(String status) {
-        tvStatus.setText("状态: " + status);
-    }
-
-    private void appendResult(String text) {
-        handler.post(() -> {
-            tvResults.append(text);
-            scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
-        });
-    }
-
-    private void setButtonsEnabled(boolean enabled) {
-        btnRunGL.setEnabled(enabled);
-        btnRunVulkan.setEnabled(enabled);
-        btnRunBoth.setEnabled(enabled);
+        tvStatus.setText(status);
     }
 
     private String formatNumber(long number) {
@@ -317,8 +250,25 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // 隐藏系统 UI
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        );
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (isRunning) {
+            stopTest();
+        }
         nativeShutdown();
     }
 }

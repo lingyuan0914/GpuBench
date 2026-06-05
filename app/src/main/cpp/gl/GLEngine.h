@@ -27,6 +27,15 @@ public:
     std::vector<std::string> getTestNames() const override;
     std::string getApiName() const override { return "OpenGL ES 3.2"; }
 
+    // 访问器
+    EGLDisplay getDisplay() const { return display_; }
+    EGLSurface getSurface() const { return surface_; }
+    int getWidth() const { return width_; }
+    int getHeight() const { return height_; }
+
+    // 几何生成
+    void generateSphere(int slices, int stacks, std::vector<float>& vertices, std::vector<uint32_t>& indices);
+
 private:
     // EGL 上下文
     EGLDisplay display_ = EGL_NO_DISPLAY;
