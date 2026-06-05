@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FF1A1A2E">
+
+    <!-- 标题栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="#FF0D0D1A">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← 返回"
+            android:textSize="14sp"
+            android:backgroundTint="#FF333333"
+            android:textColor="#FFFFFFFF" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📊 测试历史"
+            android:textSize="20sp"
+            android:textColor="#FFFFFFFF"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btnClear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="清空"
+            android:textSize="14sp"
+            android:backgroundTint="#FFFF5555"
+            android:textColor="#FFFFFFFF" />
+
+    </LinearLayout>
+
+    <!-- 最佳成绩 -->
+    <LinearLayout
+        android:id="@+id/layoutBest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#FF0D0D1A"
+        android:layout_margin="8dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🏆 最佳成绩"
+            android:textSize="14sp"
+            android:textColor="#FFFFD700"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvBestScore"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FPS: --"
+            android:textSize="36sp"
+            android:textColor="#FF00FF00"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:fontFamily="monospace" />
+
+        <TextView
+            android:id="@+id/tvBestInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="--"
+            android:textSize="12sp"
+            android:textColor="#FFCCCCCC"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- 历史记录列表 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="最近测试"
+        android:textSize="14sp"
+        android:textColor="#FF888888"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp" />
+
+    <ListView
+        android:id="@+id/listView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:divider="#FF333333"
+        android:dividerHeight="1dp" />
+
+    <!-- 空状态提示 -->
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="暂无测试记录\n运行一次测试来记录数据"
+        android:textSize="16sp"
+        android:textColor="#FF666666"
+        android:gravity="center"
+        android:visibility="gone" />
+
+</LinearLayout>

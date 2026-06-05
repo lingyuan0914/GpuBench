@@ -126,6 +126,17 @@
             android:backgroundTint="#FF4CAF50"
             android:textColor="#FFFFFFFF" />
 
+        <!-- 历史记录按钮 -->
+        <Button
+            android:id="@+id/btnHistory"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="📊 查看历史记录"
+            android:textSize="14sp"
+            android:backgroundTint="#FF333333"
+            android:textColor="#FFFFFFFF"
+            android:layout_marginTop="8dp" />
+
     </LinearLayout>
 
 </FrameLayout>

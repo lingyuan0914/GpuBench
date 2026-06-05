@@ -1,6 +1,7 @@
 package com.gpubench;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,6 +13,9 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+
+import com.gpubench.db.AppDatabase;
+import com.gpubench.db.TestRecord;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private static final String TAG = "GpuBench";
@@ -40,6 +44,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private Button btnGL;
     private Button btnVulkan;
     private Button btnStart;
+    private Button btnHistory;
+
+    // 数据库
+    private AppDatabase db;
+
+    // FPS 统计
+    private float totalFps = 0;
+    private int fpsCount = 0;
+    private long testStartTime = 0;
 
     private Handler handler;
     private boolean isRunning = false;
@@ -66,6 +79,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
             handler = new Handler(Looper.getMainLooper());
 
+            // 初始化数据库
+            db = AppDatabase.getInstance(this);
+
             // 初始化 UI
             surfaceView = findViewById(R.id.surfaceView);
             tvTitle = findViewById(R.id.tvTitle);
@@ -76,6 +92,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             btnGL = findViewById(R.id.btnGL);
             btnVulkan = findViewById(R.id.btnVulkan);
             btnStart = findViewById(R.id.btnStart);
+            btnHistory = findViewById(R.id.btnHistory);
 
             surfaceView.getHolder().addCallback(this);
 
@@ -101,6 +118,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 } else {
                     startTest();
                 }
+            });
+
+            // 历史记录按钮
+            btnHistory.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+                startActivity(intent);
             });
 
             // 默认选中 GL
@@ -156,10 +179,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         }
 
         isRunning = true;
+        totalFps = 0;
+        fpsCount = 0;
+        testStartTime = System.currentTimeMillis();
+
         btnStart.setText("⏹ 停止测试");
         btnStart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF44336));
         btnGL.setEnabled(false);
         btnVulkan.setEnabled(false);
+        btnHistory.setEnabled(false);
 
         tvTitle.setText("🎮 GPU Benchmark - " + (selectedApi.equals("GL") ? "OpenGL ES" : "Vulkan"));
 
@@ -205,10 +233,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
         handler.removeCallbacks(fpsUpdater);
 
+        // 计算平均 FPS 并保存记录
+        if (fpsCount > 0) {
+            float avgFps = totalFps / fpsCount;
+            long testDuration = (System.currentTimeMillis() - testStartTime) / 1000;
+            saveTestRecord(avgFps, testDuration);
+        }
+
         btnStart.setText("▶ 开始测试");
         btnStart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
         btnGL.setEnabled(true);
         btnVulkan.setEnabled(true);
+        btnHistory.setEnabled(true);
 
         updateStatus("测试已停止");
     }
@@ -218,6 +254,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             float fps = nativeGetCurrentFps();
             float frameTime = nativeGetCurrentFrameTime();
             long triangles = nativeGetTriangleCount();
+
+            // 累积 FPS 统计
+            if (fps > 0) {
+                totalFps += fps;
+                fpsCount++;
+            }
 
             // 更新 FPS 显示
             String fpsText = String.format("%.0f", fps);
@@ -283,6 +325,29 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             return String.format("%.1fK", number / 1_000.0);
         }
         return String.valueOf(number);
+    }
+
+    private void saveTestRecord(float avgFps, long testDuration) {
+        new Thread(() -> {
+            try {
+                TestRecord record = new TestRecord();
+                record.timestamp = System.currentTimeMillis();
+                record.deviceModel = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
+                record.androidVersion = android.os.Build.VERSION.RELEASE;
+                record.apiType = selectedApi;
+                record.avgFps = avgFps;
+                record.avgFrameTime = avgFps > 0 ? 1000.0f / avgFps : 0;
+                record.triangleCount = nativeGetTriangleCount();
+                record.testDuration = (int) testDuration;
+                record.gpuRenderer = "GPU";
+
+                db.testRecordDao().insert(record);
+
+                Log.d(TAG, "Test record saved: " + avgFps + " FPS");
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving test record", e);
+            }
+        }).start();
     }
 
     @Override

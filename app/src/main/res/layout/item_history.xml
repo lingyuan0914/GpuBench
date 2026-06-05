@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="#FF0D0D1A"
+    android:layout_marginBottom="4dp">
+
+    <!-- API 类型标识 -->
+    <TextView
+        android:id="@+id/tvApiType"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:text="GL"
+        android:textSize="14sp"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:background="#FF2196F3"
+        android:layout_marginEnd="12dp" />
+
+    <!-- 测试信息 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="2024-01-01 12:00"
+            android:textSize="12sp"
+            android:textColor="#FF888888" />
+
+        <TextView
+            android:id="@+id/tvDevice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Device Model"
+            android:textSize="14sp"
+            android:textColor="#FFCCCCCC" />
+
+    </LinearLayout>
+
+    <!-- FPS 分数 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/tvFps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="60"
+            android:textSize="28sp"
+            android:textColor="#FF00FF00"
+            android:textStyle="bold"
+            android:fontFamily="monospace" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FPS"
+            android:textSize="10sp"
+            android:textColor="#FF888888" />
+
+    </LinearLayout>
+
+</LinearLayout>
