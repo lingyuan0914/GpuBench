@@ -11,6 +11,7 @@
 #include "vulkan/VulkanEngine.h"
 #include "Benchmark.h"
 #include "MathUtils.h"
+#include "ComputeTest.h"
 
 #define LOG_TAG "GpuBench"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -336,6 +337,19 @@ Java_com_gpubench_MainActivity_nativeGetDeviceInfo(JNIEnv* env, jobject thiz) {
     }
 
     return env->NewStringUTF(info.c_str());
+}
+
+JNIEXPORT jfloatArray JNICALL
+Java_com_gpubench_MainActivity_nativeRunComputeTest(JNIEnv* env, jobject thiz) {
+    // 运行计算着色器测试
+    GpuBench::ComputeResult result = GpuBench::ComputeTest::runGflopsTest();
+
+    // 返回结果数组 [gflops, memoryBandwidth, computeScore]
+    jfloatArray resultArray = env->NewFloatArray(3);
+    jfloat values[3] = {result.gflops, result.memoryBandwidth, result.computeScore};
+    env->SetFloatArrayRegion(resultArray, 0, 3, values);
+
+    return resultArray;
 }
 
 } // extern "C"

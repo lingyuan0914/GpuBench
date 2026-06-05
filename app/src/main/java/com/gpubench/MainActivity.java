@@ -33,6 +33,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private native float nativeGetCurrentFrameTime();
     private native long nativeGetTriangleCount();
     private native String nativeGetDeviceInfo();
+    private native float[] nativeRunComputeTest();
 
     // UI 组件
     private SurfaceView surfaceView;
@@ -40,10 +41,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private TextView tvDeviceInfo;
     private TextView tvFps;
     private TextView tvInfo;
+    private TextView tvComputeResult;
     private TextView tvStatus;
     private Button btnGL;
     private Button btnVulkan;
     private Button btnStart;
+    private Button btnCompute;
     private Button btnHistory;
 
     // 数据库
@@ -88,10 +91,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             tvDeviceInfo = findViewById(R.id.tvDeviceInfo);
             tvFps = findViewById(R.id.tvFps);
             tvInfo = findViewById(R.id.tvInfo);
+            tvComputeResult = findViewById(R.id.tvComputeResult);
             tvStatus = findViewById(R.id.tvStatus);
             btnGL = findViewById(R.id.btnGL);
             btnVulkan = findViewById(R.id.btnVulkan);
             btnStart = findViewById(R.id.btnStart);
+            btnCompute = findViewById(R.id.btnCompute);
             btnHistory = findViewById(R.id.btnHistory);
 
             surfaceView.getHolder().addCallback(this);
@@ -117,6 +122,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     stopTest();
                 } else {
                     startTest();
+                }
+            });
+
+            // 计算测试按钮
+            btnCompute.setOnClickListener(v -> {
+                if (!isRunning) {
+                    runComputeTest();
                 }
             });
 
@@ -346,6 +358,101 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 Log.d(TAG, "Test record saved: " + avgFps + " FPS");
             } catch (Exception e) {
                 Log.e(TAG, "Error saving test record", e);
+            }
+        }).start();
+    }
+
+    private void runComputeTest() {
+        if (!surfaceReady) {
+            updateStatus("等待 Surface 就绪...");
+            return;
+        }
+
+        // 先初始化 GL 引擎
+        new Thread(() -> {
+            try {
+                handler.post(() -> {
+                    updateStatus("正在初始化引擎...");
+                    btnCompute.setEnabled(false);
+                    btnStart.setEnabled(false);
+                });
+
+                boolean initOk = nativeInitGL(surfaceView.getHolder().getSurface());
+                if (!initOk) {
+                    handler.post(() -> {
+                        updateStatus("引擎初始化失败");
+                        btnCompute.setEnabled(true);
+                        btnStart.setEnabled(true);
+                    });
+                    return;
+                }
+
+                handler.post(() -> updateStatus("正在运行计算测试..."));
+
+                // 运行计算测试
+                float[] result = nativeRunComputeTest();
+
+                if (result != null && result.length >= 3) {
+                    float gflops = result[0];
+                    float bandwidth = result[1];
+                    float score = result[2];
+
+                    // 显示结果
+                    String resultText = String.format("GFLOPS: %.1f | 带宽: %.1f GB/s | 分数: %.0f",
+                            gflops, bandwidth, score);
+
+                    handler.post(() -> {
+                        tvComputeResult.setText(resultText);
+                        updateStatus("计算测试完成");
+                        btnCompute.setEnabled(true);
+                        btnStart.setEnabled(true);
+                    });
+
+                    // 保存记录
+                    saveComputeTestRecord(gflops, bandwidth, score);
+
+                    Log.d(TAG, "Compute test result: " + resultText);
+                } else {
+                    handler.post(() -> {
+                        updateStatus("计算测试失败");
+                        btnCompute.setEnabled(true);
+                        btnStart.setEnabled(true);
+                    });
+                }
+
+                // 关闭引擎
+                nativeShutdown();
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error running compute test", e);
+                handler.post(() -> {
+                    updateStatus("计算测试错误: " + e.getMessage());
+                    btnCompute.setEnabled(true);
+                    btnStart.setEnabled(true);
+                });
+            }
+        }).start();
+    }
+
+    private void saveComputeTestRecord(float gflops, float bandwidth, float score) {
+        new Thread(() -> {
+            try {
+                TestRecord record = new TestRecord();
+                record.timestamp = System.currentTimeMillis();
+                record.deviceModel = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
+                record.androidVersion = android.os.Build.VERSION.RELEASE;
+                record.apiType = "Compute";
+                record.avgFps = gflops; // 用 GFLOPS 作为主要指标
+                record.avgFrameTime = bandwidth;
+                record.triangleCount = (long) score;
+                record.testDuration = 0;
+                record.gpuRenderer = String.format("%.1f GFLOPS", gflops);
+
+                db.testRecordDao().insert(record);
+
+                Log.d(TAG, "Compute test record saved: " + gflops + " GFLOPS");
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving compute test record", e);
             }
         }).start();
     }
